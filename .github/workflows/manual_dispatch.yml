@@ -7,23 +7,53 @@ jobs:
   build-and-run:
     runs-on: ubuntu-latest
     steps:
+      # 1) Grab your code
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # 2) Python runtime
       - name: Setup Python 3.10
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      - name: Install dependencies
+      # 3) Node runtime (needed by the Playwright action)
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      # 4) Playwright action: installs system deps + browsers
+      - name: Install Playwright & system dependencies
+        uses: microsoft/playwright-github-action@v1
+        with:
+          install-deps: true
+
+      # 5) Python deps
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          playwright install --with-deps
 
+      # 6) Debug: show workspace contents
+      - name: List files
+        run: ls -R .
+
+      # 7) Run the scraper
       - name: Run scraper
         run: python scraper.py --output agenda.csv
 
+      # 8) Debug: confirm CSV was created
+      - name: Show CSV head
+        run: |
+          if [ -f agenda.csv ]; then
+            head -n 5 agenda.csv
+          else
+            echo "⚠️  agenda.csv not found!"
+            exit 1
+          fi
+
+      # 9) Push the CSV back to a branch (as before)
       - name: Push agenda.csv to its own branch
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -36,6 +66,7 @@ jobs:
           git commit -m "Auto-update scraped agenda.csv" || echo "No changes to commit"
           git push origin agenda-output --force
 
+      # 10) Notify with link
       - name: Notify
         run: |
           echo "✅ agenda.csv has been pushed to the 'agenda-output' branch."
