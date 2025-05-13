@@ -28,18 +28,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # configure Git
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          # create (or reset) the output branch
           git fetch origin
           git checkout -B agenda-output
-
-          # commit & force-push
           git add agenda.csv
           git commit -m "Auto-update scraped agenda.csv" || echo "No changes to commit"
           git push origin agenda-output --force
 
-      - name: Done
-        run: echo "✅ agenda.csv has been pushed to the 'agenda-output' branch. You can view/download it here: https://github.com/${{ github.repository }}/blob/agenda-output/agenda.csv"
+      - name: Notify
+        run: |
+          echo "✅ agenda.csv has been pushed to the 'agenda-output' branch."
+          echo "Download it here: https://github.com/${{ github.repository }}/blob/agenda-output/agenda.csv"
